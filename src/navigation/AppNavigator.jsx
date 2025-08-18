@@ -12,6 +12,8 @@ import { AppTheme } from '../constant/theme';
 import { AuthContext } from '../context/AuthContext';
 import Toast from 'react-native-toast-message';
 import NoInternetBanner from '../components/NoInternetBanner';
+import Feedback from '../screens/Feedback';
+import Profile from '../screens/Profile';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +37,8 @@ const AppNavigation = () => {
             <Stack.Screen name="Splash" component={SplashScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Feedback" component={Feedback} />
+            <Stack.Screen name="Profile" component={Profile} />
           </Stack.Navigator>
           <NoInternetBanner />
           <Toast />

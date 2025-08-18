@@ -11,7 +11,7 @@ import {
     Animated,
     Linking,
 } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { IconButton, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sendSilentSms } from '../utils/SmsSender';
 import { getCurrentLocation } from '../utils/location';
@@ -21,6 +21,7 @@ import { AuthContext } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCheckServices } from '../utils/useCheckServices';
 import ServiceAlertDialog from '../components/ServiceAlertDialog';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 
 const options = [
@@ -56,6 +57,7 @@ const options = [
 
 
 const HomeScreen = () => {
+    const navigation = useNavigation();
     const theme = useTheme();
     const {
         internetEnabled,
@@ -70,22 +72,34 @@ const HomeScreen = () => {
     const [showInternetDialog, setShowInternetDialog] = useState(false);
     const [showLocationDialog, setShowLocationDialog] = useState(false);
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const userData = await AsyncStorage.getItem('userProfile');
-                if (userData) {
-                    const data = JSON.parse(userData);
-                    console.log("officer data: ", data)
-                    setUserData(data);
-                }
-            } catch (err) {
-                Alert.alert('Error', 'Failed to load user data');
-            }
-        };
+    useFocusEffect(
+        useCallback(() => {
+            let isActive = true;
 
-        fetchUserData();
-    }, []);
+            const fetchUserData = async () => {
+                try {
+                    const userData = await AsyncStorage.getItem('userProfile');
+                    if (!isActive) return;
+                    if (userData) {
+                        const data = JSON.parse(userData);
+                        console.log('officer data: ', data);
+                        setUserData(data);
+                    } else {
+                        setUserData(null);
+                    }
+                } catch (err) {
+                    Alert.alert('Error', 'Failed to load user data');
+                }
+            };
+
+            fetchUserData();
+
+            // Optional: return cleanup in case of rapid navigation
+            return () => {
+                isActive = false;
+            };
+        }, [])
+    );
 
     React.useEffect(() => {
         if (!internetEnabled) setShowInternetDialog(true);
@@ -170,6 +184,20 @@ const HomeScreen = () => {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <IconButton
+                icon="message-text"   // material-community icon name
+                size={26}
+                iconColor={theme.colors.primary}
+                style={styles.feedbackButton}
+                onPress={() => navigation.navigate('Feedback')}
+            />
+            <IconButton
+                icon="account"   // material-community icon name
+                size={26}
+                iconColor={theme.colors.primary}
+                style={styles.accountButton}
+                onPress={() => navigation.navigate('Profile')}
+            />
             <View style={{ flex: 1 }}>
                 <View style={styles.header}>
                     <Image
@@ -178,6 +206,7 @@ const HomeScreen = () => {
                         resizeMode="contain"
                     />
                     <Text style={styles.title}>সাথী</Text>
+
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollArea}>
@@ -348,6 +377,24 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6b7280', // neutral gray
         fontWeight: '500',
+    },
+    feedbackButton: {
+        position: 'absolute',
+        top: 40,      // adjust according to header spacing
+        right: 10,    // stick to top-right
+        zIndex: 10,   // ensure it stays above other items
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        elevation: 5,
+    },
+    accountButton: {
+        position: 'absolute',
+        top: 40,      // adjust according to header spacing
+        left: 10,    // stick to top-right
+        zIndex: 10,   // ensure it stays above other items
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        elevation: 5,
     },
 
 });

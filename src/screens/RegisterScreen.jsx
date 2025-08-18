@@ -109,19 +109,32 @@ const RegisterScreen = () => {
 
       console.log("Officer Response:", officerRes);
 
-      if (officerRes.success) {
-        const officers = officerRes.data?.data?.officers || [];
-        console.log("Saving officers to AsyncStorage:", officers);
-        await AsyncStorage.setItem('officers', JSON.stringify(officers));
-        Toast.show({ type: 'success', text1: 'Officer data saved.' });
+      if (officerRes?.success === true) {
+        const officers = officerRes?.data?.data?.officers;
+
+        if (Array.isArray(officers) && officers.length > 0) {
+          console.log("Saving officers to AsyncStorage:", officers);
+          await AsyncStorage.setItem('officers', JSON.stringify(officers));
+          Toast.show({ type: 'success', text1: 'Officer data saved.' });
+        } else {
+          // Officers key is missing or empty
+          Toast.show({
+            type: 'info',
+            text1: 'No officers found for this area.',
+          });
+          // stop further flow if officer data not valid
+          return;
+        }
       } else {
+        // API returned success = false → do nothing
         Toast.show({
           type: 'info',
           text1: 'No officers found for this area.',
         });
+        return;
       }
 
-      // 🚨 Ensure this route is defined!
+      // Only proceed if officer data was valid
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
