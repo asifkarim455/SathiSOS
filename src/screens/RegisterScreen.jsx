@@ -34,6 +34,8 @@ import { AuthContext } from '../context/AuthContext';
 import { apiCall } from '../utils/apiCall';
 import { Dropdown } from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TERMS_AND_CONDITIONS } from '../constant/term';
+import { PRIVACY_POLICY } from '../constant/privacy';
 
 
 const RegisterScreen = () => {
@@ -47,6 +49,8 @@ const RegisterScreen = () => {
   const [fetchedAreas, setFetchedAreas] = useState([]);
   const [selectedArea, setSelectedArea] = useState(null);
   const [loadingAreas, setLoadingAreas] = useState(false);
+  const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
+
 
 
 
@@ -256,6 +260,13 @@ const RegisterScreen = () => {
                   >
                     terms and conditions
                   </Text>
+                  {' '}and{' '}
+                  <Text
+                    style={{ textDecorationLine: 'underline', color: theme.colors.primary }}
+                    onPress={() => setPrivacyModalVisible(true)}
+                  >
+                    privacy policy
+                  </Text>
                 </Text>
               </View>
               <Button
@@ -290,21 +301,20 @@ const RegisterScreen = () => {
         title="Terms and Conditions"
       >
         <ScrollView style={{ maxHeight: 300 }}>
-          <Text style={{ marginBottom: 8 }}>
-            Please read and accept the following Terms and Conditions before using this application:
+          <Text style={{ whiteSpace: 'pre-line' }}>
+            {TERMS_AND_CONDITIONS}
           </Text>
-          <Text>
-            1. <Text style={{ fontWeight: 'bold' }}>Permissions:</Text> This app requires access to your phone, location (GPS), and SMS functionalities in order to operate as intended. These permissions are used strictly for core functionality such as emergency communication and location-based features.
-            {"\n\n"}
-            2. <Text style={{ fontWeight: 'bold' }}>Data Usage:</Text> We do <Text style={{ fontWeight: 'bold' }}>not</Text> collect or store any personal data, including contacts, location history, or messages. No user data is saved to our servers or any third-party databases.
-            {"\n\n"}
-            3. <Text style={{ fontWeight: 'bold' }}>Accuracy:</Text> You agree to provide accurate information only when prompted (e.g., during device or system setup).
-            {"\n\n"}
-            4. <Text style={{ fontWeight: 'bold' }}>Usage Compliance:</Text> You agree to use this app responsibly and only for lawful and intended purposes. Misuse of features such as SMS, location sharing, or unauthorized access is strictly prohibited.
-            {"\n\n"}
-            5. <Text style={{ fontWeight: 'bold' }}>Service Disclaimer:</Text> This app is provided "as is" without any warranties of any kind, express or implied. We are not liable for any damages or losses arising from the use of this application.
-            {"\n\n"}
-            6. <Text style={{ fontWeight: 'bold' }}>Consent:</Text> By continuing with registration and using the app, you confirm that you understand and agree to all of the above terms.
+        </ScrollView>
+      </CustomModal>
+
+      <CustomModal
+        visible={privacyModalVisible}
+        onClose={() => setPrivacyModalVisible(false)}
+        title="Privacy Policy"
+      >
+        <ScrollView style={{ maxHeight: 300 }}>
+          <Text style={{ whiteSpace: 'pre-line' }}>
+            {PRIVACY_POLICY}
           </Text>
         </ScrollView>
       </CustomModal>

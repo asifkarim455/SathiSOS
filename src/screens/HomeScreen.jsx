@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -9,6 +9,7 @@ import {
     Alert,
     ScrollView,
     Animated,
+    Linking,
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,9 +17,10 @@ import { sendSilentSms } from '../utils/SmsSender';
 import { getCurrentLocation } from '../utils/location';
 import { makeDirectCall } from '../utils/DirectCall';
 import { requestSmsAppRole } from '../utils/SmsPermission';
-import DeviceInfo from 'react-native-device-info';
 import { AuthContext } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCheckServices } from '../utils/useCheckServices';
+import ServiceAlertDialog from '../components/ServiceAlertDialog';
 
 
 const options = [
@@ -55,8 +57,18 @@ const options = [
 
 const HomeScreen = () => {
     const theme = useTheme();
+    const {
+        internetEnabled,
+        locationEnabled,
+        checkingLocation,
+        checkAndRequestLocation,
+    } = useCheckServices();
+
     const { appVersion } = useContext(AuthContext);
     const [userData, setUserData] = useState('');
+
+    const [showInternetDialog, setShowInternetDialog] = useState(false);
+    const [showLocationDialog, setShowLocationDialog] = useState(false);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -73,6 +85,33 @@ const HomeScreen = () => {
         };
 
         fetchUserData();
+    }, []);
+
+    React.useEffect(() => {
+        if (!internetEnabled) setShowInternetDialog(true);
+        else setShowInternetDialog(false);
+    }, [internetEnabled]);
+
+    // Show/hide location dialog based on real-time location status
+    React.useEffect(() => {
+        if (!locationEnabled) setShowLocationDialog(true);
+        else setShowLocationDialog(false);
+    }, [locationEnabled]);
+
+    // Location enable retry action for dialog button
+    const onEnableLocation = useCallback(async () => {
+        setShowLocationDialog(false);
+        try {
+            await checkAndRequestLocation();
+        } catch {
+            // Handle error if needed
+        }
+    }, [checkAndRequestLocation]);
+
+    // Internet enable action: open device settings
+    const onEnableInternet = useCallback(() => {
+        setShowInternetDialog(false);
+        Linking.openSettings();
     }, []);
 
     const handlePress = async (label) => {
@@ -196,6 +235,26 @@ const HomeScreen = () => {
                     <Text style={styles.versionText}>App Version- {appVersion}</Text>
                 </View>
             </View>
+
+            {/* Internet Alert Dialog */}
+            <ServiceAlertDialog
+                visible={showInternetDialog}
+                title="Internet Required"
+                message="Please enable Wi-Fi or Mobile Data to continue using the app."
+                onDismiss={() => setShowInternetDialog(false)}
+                onAction={onEnableInternet}
+                actionLabel="Open Settings"
+            />
+
+            {/* Location Alert Dialog */}
+            <ServiceAlertDialog
+                visible={showLocationDialog}
+                title="Location Required"
+                message="Please enable location services to continue using the app."
+                onDismiss={() => setShowLocationDialog(false)}
+                onAction={onEnableLocation}
+                actionLabel="Enable Location"
+            />
         </SafeAreaView>
     );
 };

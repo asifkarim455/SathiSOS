@@ -25,6 +25,7 @@
     "lottie-react-native": "^7.2.4",
     "react": "19.1.0",
     "react-native": "0.80.1",
+    "react-native-android-location-enabler": "^3.0.1",
     "react-native-device-info": "^14.0.4",
     "react-native-element-dropdown": "^2.12.4",
     "react-native-gesture-handler": "^2.27.1",
