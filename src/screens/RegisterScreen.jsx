@@ -196,6 +196,7 @@ const RegisterScreen = () => {
                 keyboardType="phone-pad"
                 style={styles.input}
                 mode="outlined"
+                maxLength={10}
               />
               <TextInput
                 label="Registration Code"

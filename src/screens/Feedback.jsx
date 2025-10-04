@@ -39,17 +39,34 @@ const Feedback = () => {
         setLoading(true);
         setFetchError('');
         try {
-            const res = await apiCall('/api/user/feedback-topics', 'get');
-            if (res?.success && res?.data?.success && Array.isArray(res?.data?.data)) {
-                const mapped = res.data.data.map(item => ({
-                    label: item.title,   // show title only
-                    value: item._id,     // store id
-                }));
+            // Try to read adminId from stored user profile so we can fetch public topics for that admin
+            const userData = await AsyncStorage.getItem('userProfile');
+            const user = userData ? JSON.parse(userData) : null;
+            const adminId = user?.adminId;
+
+            if (!adminId) {
+                setFetchError('Admin ID missing. Please complete your profile to load topics.');
+                setTopics([]);
+                setLoading(false);
+                return;
+            }
+
+            // Call the public endpoint providing adminId as query param
+            const res = await apiCall(`/api/user/feedback-topics/public?adminId=${encodeURIComponent(adminId)}`, 'GET');
+            console.log(res);
+
+            if (res?.success) {
+                // Support both shapes: res.data.data or res.data
+                const items = res?.data?.data ?? res?.data ?? [];
+                const mapped = Array.isArray(items)
+                    ? items.map(item => ({ label: item.title, value: item._id || item.id }))
+                    : [];
                 setTopics(mapped);
             } else {
                 setFetchError('Failed to load topics');
             }
         } catch (e) {
+            console.error('loadTopics error', e);
             setFetchError('Failed to load topics');
         } finally {
             setLoading(false);

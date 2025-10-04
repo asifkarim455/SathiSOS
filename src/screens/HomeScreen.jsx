@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { IconButton, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { sendSilentSms } from '../utils/SmsSender';
+import { sendSilentSms, processPendingSmsQueue } from '../utils/SmsSender';
 import { getCurrentLocation } from '../utils/location';
 import { makeDirectCall } from '../utils/DirectCall';
 import { requestSmsAppRole } from '../utils/SmsPermission';
@@ -84,6 +84,12 @@ const HomeScreen = () => {
                         const data = JSON.parse(userData);
                         console.log('officer data: ', data);
                         setUserData(data);
+                        // After loading profile, attempt to resend any pending SMS messages saved earlier.
+                        try {
+                            await processPendingSmsQueue();
+                        } catch (e) {
+                            console.warn('Error processing pending SMS queue', e);
+                        }
                     } else {
                         setUserData(null);
                     }
@@ -161,16 +167,23 @@ const HomeScreen = () => {
             // Send to parent
             await sendSilentSms(userData.parentMobile, parentMessage);
 
-            // Send to all officers (except parent)
+            // Send to all officers (except parent) — batch send with fallback persistence handled in SmsSender
             const officersJson = await AsyncStorage.getItem('officers');
             if (officersJson) {
-                const officers = JSON.parse(officersJson);
-                const officerNumbers = officers
-                    .filter(o => o?.officerNumber && o.officerNumber !== userData.parentMobile)
-                    .map(o => o.officerNumber);
+                try {
+                    const officers = JSON.parse(officersJson);
+                    const officerNumbers = Array.from(new Set(
+                        officers
+                            .map(o => o?.officerNumber)
+                            .filter(n => n && n !== userData.parentMobile)
+                    ));
 
-                for (const number of officerNumbers) {
-                    await sendSilentSms(number, officerMessage);
+                    if (officerNumbers.length > 0) {
+                        // sendSilentSms accepts array of recipients and will persist failures for retry
+                        await sendSilentSms(officerNumbers, officerMessage, { allowFallback: true, maxRetries: 3 });
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse officers or send SMS to officers', e);
                 }
             }
 
